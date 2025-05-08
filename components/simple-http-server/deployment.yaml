@@ -11,7 +11,7 @@ metadata:
     app.openshift.io/runtime: other-linux
     app.openshift.io/runtime-namespace: simple-http
 spec:
-  replicas: 3
+  replicas: 1
   selector:
     matchLabels:
       app: simple-http-server
@@ -21,12 +21,22 @@ spec:
         app: simple-http-server
         deployment: simple-http-server
       annotations:
+        # Important for primary udn:
         k8s.ovn.org/open-default-ports: |
           - protocol: tcp
             port: 8080
     spec:
       containers:
         - resources: {}
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef: 
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef: 
+                  fieldPath: metadata.name
           readinessProbe:
             httpGet:
               path: /readiness-probe
