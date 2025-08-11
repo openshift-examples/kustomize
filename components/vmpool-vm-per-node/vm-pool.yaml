@@ -1,0 +1,62 @@
+---
+apiVersion: pool.kubevirt.io/v1alpha1
+kind: VirtualMachinePool
+metadata:
+  name: vm-per-node
+spec:
+  replicas: 0
+  selector:
+    matchLabels:
+      kubevirt.io/vmpool: vm-per-node
+  virtualMachineTemplate:
+    metadata:
+      creationTimestamp: null
+      labels:
+        kubevirt.io/vmpool: vm-per-node
+    spec:
+      runStrategy: Always
+      template:
+        metadata:
+          creationTimestamp: null
+          labels:
+            kubevirt.io/vmpool: vm-per-node
+        spec:
+          topologySpreadConstraints:
+            - topologyKey: "kubernetes.io/hostname"
+              maxSkew: 1
+              whenUnsatisfiable: DoNotSchedule
+              labelSelector:
+                matchLabels:
+                  kubevirt.io/vmpool: vm-per-node
+          domain:
+            cpu:
+              cores: 1
+            devices:
+              disks:
+              - disk:
+                  bus: virtio
+                name: containerdisk
+              - disk:
+                  bus: virtio
+                name: cloudinitdisk
+              interfaces:
+                - bridge: {}
+                  model: virtio
+                  name: br-vlan-2003
+              rng: {}
+            memory:
+              guest: 1024M
+          networks:
+            - multus:
+                networkName: br-vlan-2003
+              name: br-vlan-2003
+          volumes:
+          - containerDisk:
+              image: quay.io/containerdisks/fedora:latest
+            name: containerdisk
+          - cloudInitNoCloud:
+              userData: |-
+                #cloud-config
+                password: fedora
+                chpasswd: { expire: False }
+            name: cloudinitdisk
