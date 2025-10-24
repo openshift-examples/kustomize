@@ -4,7 +4,7 @@ kind: VirtualMachinePool
 metadata:
   name: vm-per-node
 spec:
-  replicas: 0
+  replicas: 3
   selector:
     matchLabels:
       kubevirt.io/vmpool: vm-per-node
@@ -21,6 +21,8 @@ spec:
           labels:
             kubevirt.io/vmpool: vm-per-node
         spec:
+          nodeSelector:
+            node-role.kubernetes.io/storage-node: ""
           topologySpreadConstraints:
             - topologyKey: "kubernetes.io/hostname"
               maxSkew: 1
@@ -42,14 +44,14 @@ spec:
               interfaces:
                 - bridge: {}
                   model: virtio
-                  name: br-vlan-2003
+                  name: coe-bridge
               rng: {}
             memory:
               guest: 1024M
           networks:
             - multus:
-                networkName: br-vlan-2003
-              name: br-vlan-2003
+                networkName: coe-bridge
+              name: coe-bridge
           volumes:
           - containerDisk:
               image: quay.io/containerdisks/fedora:latest
