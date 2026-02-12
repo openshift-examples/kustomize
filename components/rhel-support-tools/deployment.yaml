@@ -23,6 +23,19 @@ spec:
       containers:
         - name: tools
           image: registry.redhat.io/rhel9/support-tools:latest
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef: 
+                  fieldPath: spec.nodeName
+            - name: NODE_IP
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+            - name: POD_NAME
+              valueFrom:
+                fieldRef: 
+                  fieldPath: metadata.name
           command:
             - "/bin/sh"
             - "-c"
