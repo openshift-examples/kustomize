@@ -1,0 +1,85 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-nginx
+  labels:
+    app: simple-nginx
+    app.openshift.io/runtime: nginx
+    app.kubernetes.io/part-of: simple-nginx
+    app.kubernetes.io/component: simple-nginx
+    app.kubernetes.io/instance: simple-nginx
+    app.kubernetes.io/name: simple-nginx
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: simple-nginx
+  template:
+    metadata:
+      labels:
+        app: simple-nginx
+    spec:
+      automountServiceAccountToken: false
+      volumes:
+        - name: docroot
+          emptyDir: {}
+      containers:
+        - image: registry.access.redhat.com/ubi9/nginx-126:latest
+          name: nginx
+          ports:
+            - name: http
+              containerPort: 8080
+          securityContext:
+            readOnlyRootFilesystem: false
+          livenessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 8080
+              scheme: HTTP
+            timeoutSeconds: 1
+            periodSeconds: 10
+            successThreshold: 1
+            failureThreshold: 3
+          resources:
+            limits:
+              ephemeral-storage: 40Mi
+              cpu: 0.5
+              memory: "256Mi"
+            requests:
+              ephemeral-storage: 20Mi
+              cpu: 0.5
+              memory: "256Mi"
+          volumeMounts:
+            - name: docroot
+              mountPath: /opt/app-root/src/
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          command:
+            - /bin/sh
+            - -c
+            - |
+
+              set -x
+
+              # Configure Nginx to use  X-Forwarded-For to get the real client IP 
+              # address and not form ingress controller
+              # echo "set_real_ip_from  10.128.0.0/14;" >> /opt/app-root/etc/nginx.d/realip.conf
+              # echo "real_ip_header    X-Forwarded-For;" >> /opt/app-root/etc/nginx.d/realip.conf
+              
+              echo "Greetings from $POD_NAME" >> /opt/app-root/src/index.html
+              /usr/libexec/s2i/run
