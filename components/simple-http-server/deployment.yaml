@@ -26,8 +26,32 @@ spec:
           - protocol: tcp
             port: 8080
     spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - simple-http-server
+                topologyKey: topology.kubernetes.io/zone
       containers:
-        - resources: {}
+        - name: simple-http-server
+          resources:
+            limits:
+              cpu: "1"
+              memory: "1Gi"
+            requests:
+              cpu: "1"
+              memory: "1Gi"
+          resizePolicy: 
+            - resourceName: cpu
+              restartPolicy: NotRequired
+            - resourceName: memory
+              restartPolicy: RestartContainer
           env:
             - name: NODE_NAME
               valueFrom:
@@ -47,7 +71,6 @@ spec:
             successThreshold: 1
             failureThreshold: 1
           terminationMessagePath: /dev/termination-log
-          name: simple-http-server
           livenessProbe:
             httpGet:
               path: /liveness-probe
@@ -62,16 +85,9 @@ spec:
               protocol: TCP
           imagePullPolicy: Always
           terminationMessagePolicy: File
-          image: 'quay.io/openshift-examples/simple-http-server:latest'
+          image: quay.io/openshift-examples/simple-http-server:202605070951
       restartPolicy: Always
       terminationGracePeriodSeconds: 30
       dnsPolicy: ClusterFirst
       securityContext: {}
       schedulerName: default-scheduler
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 25%
-      maxSurge: 25%
-  revisionHistoryLimit: 10
-  progressDeadlineSeconds: 600
