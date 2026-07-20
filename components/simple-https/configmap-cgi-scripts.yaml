@@ -1,0 +1,92 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-https-cgi-scripts
+data:
+  srv.sh: |
+    #!/bin/sh
+    url="${REQUEST_URI%%\?*}"
+    query="${REQUEST_URI#*\?}"
+    if [ "$query" = "$REQUEST_URI" ]; then
+      query="$url"
+    fi
+
+    echo "$REQUEST_METHOD $REQUEST_URI from $REMOTE_ADDR" > /dev/stderr
+
+    case $url in
+      /readiness-probe)
+        if [ -f "/probe/readiness" ] ; then
+          echo "Content-Type: text/plain"
+          echo "X-ENV-HOSTNAME: $HOSTNAME"
+          echo ""
+          echo "ok"
+        else
+          echo "Status: 404 Not Found"
+          echo "Content-Type: text/plain"
+          echo "X-ENV-HOSTNAME: $HOSTNAME"
+          echo ""
+        fi
+        ;;
+
+      /liveness-probe)
+        if [ -f "/probe/liveness" ] ; then
+          echo "Content-Type: text/plain"
+          echo "X-ENV-HOSTNAME: $HOSTNAME"
+          echo ""
+          echo "ok"
+        else
+          echo "Status: 404 Not Found"
+          echo "Content-Type: text/plain"
+          echo "X-ENV-HOSTNAME: $HOSTNAME"
+          echo ""
+        fi
+        ;;
+
+      /)
+        echo "Content-Type: text/html"
+        echo "X-ENV-HOSTNAME: $HOSTNAME"
+        echo ""
+        echo "<html>"
+        echo "<head></head>"
+        echo "<body>"
+        echo "<h1>Hi, $REMOTE_ADDR</h1>"
+        echo "I'm a simple httpd+CGI webserver running in"
+        echo "pod <b>$POD_NAME</b> on node <b>$NODE_NAME</b>"
+        echo "responding at $(date +'%F %T %z')"
+        echo "</body>"
+        echo "</html>"
+        ;;
+
+      /raw)
+        echo "Content-Type: text/plain"
+        echo "X-ENV-HOSTNAME: $HOSTNAME"
+        echo ""
+
+        echo "# Basic POD Informations"
+        echo -e "\n## Env"
+        env | sort
+
+        echo -e "\n## ip addr show"
+        ip addr show
+
+        echo -e "\n## ip route show"
+        ip route show
+
+        echo -e "\n## resolv.conf"
+        cat /etc/resolv.conf
+
+        echo -e "\n## request"
+        echo "$REQUEST_METHOD $REQUEST_URI"
+
+        echo -e "\n## Date/Time"
+        echo "$(date +'%F %T %z')"
+        ;;
+
+      *)
+        echo "Status: 404 Not Found"
+        echo "Content-Type: text/plain"
+        echo "X-ENV-HOSTNAME: $HOSTNAME"
+        echo ""
+        echo "Not Found: $url"
+        ;;
+    esac

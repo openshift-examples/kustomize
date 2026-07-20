@@ -1,0 +1,109 @@
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: simple-https
+  labels:
+    app: simple-https
+    app.kubernetes.io/component: simple-https
+    app.kubernetes.io/instance: simple-https
+    app.kubernetes.io/name: simple-https
+    app.kubernetes.io/part-of: simple-https-app
+    app.openshift.io/runtime: apache
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: simple-https
+  template:
+    metadata:
+      labels:
+        app: simple-https
+        deployment: simple-https
+    spec:
+      initContainers:
+        - name: create-probe-files
+          image: registry.access.redhat.com/ubi8/httpd-24
+          command: ["sh", "-c", "touch /probe/readiness /probe/liveness"]
+          volumeMounts:
+            - name: probe
+              mountPath: /probe
+      containers:
+        - name: httpd
+          image: registry.access.redhat.com/ubi8/httpd-24
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+          ports:
+            - containerPort: 8080
+              protocol: TCP
+              name: http
+            - containerPort: 8443
+              protocol: TCP
+              name: https
+          readinessProbe:
+            httpGet:
+              path: /readiness-probe
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet:
+              path: /liveness-probe
+              port: 8443
+              scheme: HTTPS
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          volumeMounts:
+            - name: tls-cert
+              mountPath: /etc/httpd/tls/localhost.crt
+              subPath: tls.crt
+              readOnly: true
+            - name: tls-key
+              mountPath: /etc/httpd/tls/localhost.key
+              subPath: tls.key
+              readOnly: true
+            - name: httpd-cfg
+              mountPath: /etc/httpd/conf.d/cgi.conf
+              subPath: cgi.conf
+              readOnly: true
+            - name: cgi-scripts
+              mountPath: /var/www/cgi-bin
+              readOnly: true
+            - name: probe
+              mountPath: /probe
+          resources:
+            limits:
+              cpu: 500m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+      volumes:
+        - name: tls-cert
+          secret:
+            secretName: simple-https-tls
+            items:
+              - key: tls.crt
+                path: tls.crt
+        - name: tls-key
+          secret:
+            secretName: simple-https-tls
+            items:
+              - key: tls.key
+                path: tls.key
+        - name: httpd-cfg
+          configMap:
+            name: simple-https-httpd-cfg
+        - name: cgi-scripts
+          configMap:
+            name: simple-https-cgi-scripts
+            defaultMode: 0755
+        - name: probe
+          emptyDir: {}

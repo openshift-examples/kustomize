@@ -1,0 +1,40 @@
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: simple-https
+  labels:
+    app: simple-https
+    app.kubernetes.io/component: simple-https
+    app.kubernetes.io/instance: simple-https
+    app.kubernetes.io/name: simple-https
+    app.kubernetes.io/part-of: simple-https-app
+spec:
+  to:
+    kind: Service
+    name: simple-https
+    weight: 100
+  port:
+    targetPort: https
+  tls:
+    termination: reencrypt
+    insecureEdgeTerminationPolicy: Redirect
+  wildcardPolicy: None
+---
+kind: Route
+apiVersion: route.openshift.io/v1
+metadata:
+  name: http-only
+  labels:
+    app: simple-https
+    app.kubernetes.io/component: simple-https
+    app.kubernetes.io/instance: simple-https
+    app.kubernetes.io/name: simple-https
+    app.kubernetes.io/part-of: simple-https-app
+spec:
+  to:
+    kind: Service
+    name: simple-https
+    weight: 100
+  port:
+    targetPort: http
+  wildcardPolicy: None

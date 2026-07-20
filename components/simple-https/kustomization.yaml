@@ -1,0 +1,15 @@
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+
+labels:
+  - includeSelectors: true
+    pairs:
+      app: simple-https
+      deployment: simple-https
+
+resources:
+  - deployment.yaml
+  - service.yaml
+  - route.yaml
+  - configmap-httpd-cfg.yaml
+  - configmap-cgi-scripts.yaml

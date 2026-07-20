@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: simple-https-httpd-cfg
+data:
+  cgi.conf: |
+    PassEnv NODE_NAME POD_NAME
+
+    ScriptAliasMatch "^/(.*)$" "/var/www/cgi-bin/srv.sh"
+
+    <Directory "/var/www/cgi-bin">
+      AllowOverride None
+      Options +ExecCGI +FollowSymLinks
+      Require all granted
+    </Directory>
