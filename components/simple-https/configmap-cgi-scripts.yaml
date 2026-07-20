@@ -53,6 +53,7 @@ data:
         echo "I'm a simple httpd+CGI webserver running in"
         echo "pod <b>$POD_NAME</b> on node <b>$NODE_NAME</b>"
         echo "responding at $(date +'%F %T %z')"
+        echo "via <b>$REQUEST_SCHEME</b>"
         echo "</body>"
         echo "</html>"
         ;;
