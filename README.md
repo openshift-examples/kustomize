@@ -1,8 +1,14 @@
 # Kustomize examples
 
+## Apply via `oc` / `kubectl`
+
+Use quotes to prevent the shell from interpreting `?` as a glob character:
+
+```bash
+oc apply -k 'https://github.com/openshift-examples/kustomize.git/components/simple-http-server?ref=2026-07-20'
 ```
-oc apply -k git@github.com:openshift-examples/kustomize/components/simple-http-server
-```
+
+The `?ref=` parameter accepts tags, branches, or full commit SHAs.
 
 ## Remote examples
 
